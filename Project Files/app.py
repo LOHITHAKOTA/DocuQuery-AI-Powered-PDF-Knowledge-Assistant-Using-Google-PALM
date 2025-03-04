@@ -8,7 +8,7 @@ from langchain.chains import ConversationalRetrievalChain
 from langchain.memory import ConversationBufferMemory
 from langchain_community.llms import GooglePalm
 from langchain_community.embeddings import GooglePalmEmbeddings
-import google.generativeai as genai  # ✅ Google AI API
+import google.generativeai as genai  #Google AI API
 import docx
 from dotenv import load_dotenv
 from fpdf import FPDF
@@ -18,13 +18,13 @@ load_dotenv()
 GOOGLE_API_KEY = os.getenv("GOOGLE_API_KEY")
 
 if not GOOGLE_API_KEY:
-    st.error("❌ GOOGLE_API_KEY is missing! Please set it in a .env file or environment variables.")
+    st.error("GOOGLE_API_KEY is missing! Please set it in a .env file or environment variables.")
     st.stop()
 
-# ✅ Set API Key for Google AI
+#Set API Key for Google AI
 genai.configure(api_key=GOOGLE_API_KEY)
 
-# ✅ Extract text from PDFs with page-wise logging
+#Extract text from PDFs with page-wise logging
 def extract_text_from_pdfs(pdf_docs):
     text_ = []
     for pdf in pdf_docs:
@@ -33,11 +33,11 @@ def extract_text_from_pdfs(pdf_docs):
             extracted = page.extract_text()
             if extracted:
                 text_.append(f"Page {i+1}:\n{extracted}\n")
-                st.write(f"📄 Extracted from Page {i+1}:")
+                st.write(f"Extracted from Page {i+1}:")
                 st.write(extracted[:500])  # Display first 500 chars
     return "\n".join(text_)
 
-# ✅ Extract text from Word documents
+# Extract text from Word documents
 def extract_text_from_word(docx_files):
     text = ""
     for doc in docx_files:
@@ -46,20 +46,20 @@ def extract_text_from_word(docx_files):
             text += para.text + "\n"
     return text
 
-# ✅ Process price lists
+#Process price lists
 def process_price_lists(pdf_docs):
     return extract_text_from_pdfs(pdf_docs)
 
-# ✅ Generate text embeddings using Google's `text-embedding-gecko`
+#Generate text embeddings using Google's `text-embedding-gecko`
 def get_text_embedding(text):
     model = "models/embedding-001"  # Google's embedding model
     response = genai.embed_content(model=model, content=text, task_type="retrieval_document")
     return response["embedding"]
 
-# ✅ Research Paper Summarization with Summary Length Options
+#Research Paper Summarization with Summary Length Options
 def summarize_research_paper(text, summary_length="medium"):
     if not text.strip():
-        return "❌ No valid text to summarize."
+        return "No valid text to summarize."
 
     model = genai.GenerativeModel("models/gemini-1.5-pro-latest")  
 
@@ -80,15 +80,15 @@ def summarize_research_paper(text, summary_length="medium"):
     """
 
     try:
-        response = model.generate_content(prompt)  # ✅ Correct method
+        response = model.generate_content(prompt)  #Correct method
 
         return response.text if response else "No summary generated."
 
     except Exception as e:
-        st.error(f"❌ Error in summarizing research paper: {str(e)}")
+        st.error(f"Error in summarizing research paper: {str(e)}")
         return "Summarization failed."
 
-# ✅ Save summary as PDF
+#Save summary as PDF
 def save_summary_as_pdf(summary_text):
     pdf = FPDF()
     pdf.set_auto_page_break(auto=True, margin=15)
@@ -100,15 +100,15 @@ def save_summary_as_pdf(summary_text):
     pdf.output(file_path)
     return file_path
 
-# ✅ Resume Matching with AI
+# Resume Matching with AI
 def match_resumes(pdf_docs, job_description):
     extracted_resumes = extract_text_from_pdfs(pdf_docs)
 
     if not extracted_resumes.strip():
-        st.error("❌ No text extracted from resumes.")
+        st.error("No text extracted from resumes.")
         return "No resumes found."
 
-    model = genai.GenerativeModel('models/gemini-1.5-flash')  # ✅ Faster option
+    model = genai.GenerativeModel('models/gemini-1.5-flash')  #Faster option
 
     prompt = f"""
     You are an AI assistant specializing in resume screening.
@@ -124,15 +124,15 @@ def match_resumes(pdf_docs, job_description):
     """
 
     try:
-        response = model.generate_content(prompt)  # ✅ Correct method for Gemini API
+        response = model.generate_content(prompt)  #Correct method for Gemini API
 
         return response.text if response else "No matching resumes found."
 
     except Exception as e:
-        st.error(f"❌ Error in resume matching: {str(e)}")
+        st.error(f"Error in resume matching: {str(e)}")
         return "Resume matching failed."
 
-# ✅ Main Streamlit App
+#Main Streamlit App
 def main():
     st.set_page_config(page_title="DocuQuery: AI-Powered PDF Knowledge Assistant")
     st.header("DocuQuery: AI-Powered PDF Knowledge Assistant")
@@ -150,29 +150,29 @@ def main():
 
     if st.button("Process"):
         if not pdf_docs:
-            st.error("❌ Please upload PDF files.")
+            st.error("Please upload PDF files.")
             return
         
         with st.spinner("Processing..."):
             if option == "Price List Analyzer":
                 extracted_text = process_price_lists(pdf_docs)
-                st.write("📑 Extracted Price List:")
+                st.write("Extracted Price List:")
                 st.write(extracted_text[:1000])  # Display first 1000 chars
             
             elif option == "Research Paper Summarizer":
                 extracted_text = extract_text_from_pdfs(pdf_docs)
                 summary = summarize_research_paper(extracted_text, summary_length)
-                st.write("📑 Research Paper Summary:")
+                st.write("Research Paper Summary:")
                 st.write(summary.replace("•", "🔹"))  # Bullet formatting
                 
-                # ✅ PDF Download Option
+                #PDF Download Option
                 pdf_file_path = save_summary_as_pdf(summary)
                 with open(pdf_file_path, "rb") as file:
                     st.download_button(label="📥 Download Summary as PDF", data=file, file_name="Research_Summary.pdf", mime="application/pdf")
 
             elif option == "Resume Matcher for Hiring":
                 if not job_desc.strip():
-                    st.error("❌ Please enter a job description.")
+                    st.error("Please enter a job description.")
                     return
                 match_result = match_resumes(pdf_docs, job_desc)
                 st.write("📌 Matched Resumes:")
